@@ -2,53 +2,44 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { TextInput, TouchableOpacity } from 'react-native-gesture-handler';
-
+import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Add({navigation}) {
+export default function Edit({navigation}) {
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [place, setPlace] = useState('')
 
+  useEffect(()=>{
+    setName(navigation.getParam('item').name)
+    setPlace(navigation.getParam('item').place)
+    setDescription(navigation.getParam('item').description)
+  },[])
+
   const saveItem = async() => {
-
-    // It will load the item in the asyncstorage
+    // 1. Load all the items from the AsyncStorage
+    // 2. Find the one that is the same
+    // 3. Change the value with the edited value
     const value = await AsyncStorage.getItem('@todos')
-
-    // If there is an existing item, it will add it to the end and save the item
-    if(value !== null) {
-      //Get the existing item
-      let itemsArray = JSON.parse(value)
-      let currentID = itemsArray[itemsArray.length - 1].id + 1
-      let newItem = {
-        id: currentID,
-        name: name,
-        place: place,
-        description: description
-       }
-       itemsArray.push(newItem)
-       await AsyncStorage.setItem('@todos', JSON.stringify(itemsArray))
-
-    } else {
-
-    //If there is no item saved previously, it will create a new array and add the item at the end and then save it
-    let newArray = []
-    let newItem = {
-      id: 1,
-      name: name,
-      place: place,
-      description: description
-     }
-     newArray.push(newItem)
-     await AsyncStorage.setItem('@todos', JSON.stringify(newArray))
+    if(value !== null){
+        let todos = JSON.parse(value)
+        for(var i = 0; i < todos.length; i++){
+            if(todos[i].id === navigation.getParam('item').id){
+                todos[i].name = name
+                todos[i].place = place
+                todos[i].description = description
+                break;
+            }
+        }
+        await AsyncStorage.setItem('@todos', JSON.stringify(todos))
+        navigation.pop()
     }
-    navigation.pop()
   }
-
+  
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Add New Item</Text>
+      <Text style={styles.text}>Edit the Item</Text>
       <TextInput style={styles.input}
       onChangeText={(text)=> setName(text)}
       value={name}
@@ -65,7 +56,7 @@ export default function Add({navigation}) {
       placeholder="Enter Description.."
       />
       <TouchableOpacity onPress={saveItem}>
-        <Text style={styles.button}>Add Item</Text>
+        <Text style={styles.button}>Edit Item</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={()=>navigation.pop()}>
         <Text style={styles.button}>Go back..</Text>
